@@ -627,8 +627,10 @@ in
         };
 
         users.users.prowlarr = {
-          extraGroups = [ "media" ];
+          isSystemUser = true;
+          group = "prowlarr";
         };
+        users.groups.prowlarr = {};
 
         systemd.services.prowlarr.preStart = shb.replaceSecrets {
           userConfig =
