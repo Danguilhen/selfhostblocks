@@ -278,6 +278,69 @@ let
         };
       };
     };
+    prowlarr = {
+      settingsFormat = shb.formatXML { enclosingRoot = "Config"; };
+      moreOptions = {
+        settings = lib.mkOption {
+          description = "Specific options for prowlarr.";
+          default = { };
+          type = lib.types.submodule {
+            freeformType = apps.prowlarr.settingsFormat.type;
+            options = {
+              ApiKey = lib.mkOption {
+                type = shb.secretFileType;
+                description = "Path to api key secret file.";
+              };
+
+              LogLevel = lib.mkOption {
+                type = lib.types.enum [
+                  "debug"
+                  "info"
+                ];
+                description = "Log level.";
+                default = "info";
+              };
+
+              Port = lib.mkOption {
+                type = lib.types.port;
+                description = "Port on which prowlarr listens to incoming requests.";
+                default = 9696;
+              };
+
+              BindAddress = lib.mkOption {
+                type = lib.types.str;
+                internal = true;
+                default = "127.0.0.1";
+              };
+
+              UrlBase = lib.mkOption {
+                type = lib.types.str;
+                internal = true;
+                default = "";
+              };
+
+              EnableSsl = lib.mkOption {
+                type = lib.types.bool;
+                internal = true;
+                default = false;
+              };
+
+              AuthenticationMethod = lib.mkOption {
+                type = lib.types.str;
+                internal = true;
+                default = "External";
+              };
+
+              AuthenticationRequired = lib.mkOption {
+                type = lib.types.str;
+                internal = true;
+                default = "Enabled";
+              };
+            };
+          };
+        };
+      };
+    };
   };
 
   vhosts =
@@ -547,6 +610,38 @@ in
             extraBypassResources = [ "^/dl.*" ];
           } cfg')
         ];
+      }
+    ))
+
+    (lib.mkIf cfg.prowlarr.enable (
+      let
+        cfg' = cfg.prowlarr;
+        isSSOEnabled = !(isNull cfg'.authEndpoint);
+      in
+      {
+        services.nginx.enable = true;
+
+        services.prowlarr = {
+          enable = true;
+          dataDir = cfg'.dataDir;
+        };
+
+        users.users.prowlarr = {
+          extraGroups = [ "media" ];
+        };
+
+        systemd.services.prowlarr.preStart = shb.replaceSecrets {
+          userConfig =
+            cfg'.settings
+            // (lib.optionalAttrs isSSOEnabled {
+              AuthenticationRequired = "DisabledForLocalAddresses";
+              AuthenticationMethod = "External";
+            });
+          resultPath = "${cfg'.dataDir}/config.xml";
+          generator = apps.prowlarr.settingsFormat.generate;
+        };
+
+        shb.nginx.vhosts = [ (vhosts { } cfg') ];
       }
     ))
   ];

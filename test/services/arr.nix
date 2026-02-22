@@ -216,6 +216,7 @@ let
   readarrCfgFn = cfg: "${cfg.dataDir}/config.xml";
   lidarrCfgFn = cfg: "${cfg.dataDir}/config.xml";
   jackettCfgFn = cfg: "${cfg.dataDir}/ServerConfig.json";
+  prowlarrCfgFn = cfg: "${cfg.dataDir}/config.xml";
 in
 {
   radarr_basic = basicTest "radarr" radarrCfgFn;
@@ -247,4 +248,9 @@ in
   jackett_backup = backupTest "jackett" jackettCfgFn;
   jackett_https = httpsTest "jackett" jackettCfgFn;
   jackett_sso = ssoTest "jackett" jackettCfgFn;
+
+  prowlarr_basic = basicTest "prowlarr" prowlarrCfgFn;
+  prowlarr_backup = backupTest "prowlarr" prowlarrCfgFn;
+  prowlarr_https = httpsTest "prowlarr" prowlarrCfgFn;
+  prowlarr_sso = ssoTest "prowlarr" prowlarrCfgFn;
 }
