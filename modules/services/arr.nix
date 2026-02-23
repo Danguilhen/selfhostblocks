@@ -632,15 +632,12 @@ in
           serviceConfig.ExecStart = lib.mkForce "${config.services.prowlarr.package}/bin/Prowlarr -nobrowser -data=${cfg'.dataDir}";
           
           # Remove StateDirectory when using custom dataDir to avoid conflicts
-          serviceConfig.StateDirectory = lib.mkIf (cfg'.dataDir == "/var/lib/prowlarr") "prowlarr";
+          serviceConfig.StateDirectory = lib.mkForce (
+            if cfg'.dataDir == "/var/lib/prowlarr" then "prowlarr" else null
+          );
           
           # Allow preStart script to write to data directory
           serviceConfig.ReadWritePaths = [ cfg'.dataDir ];
-        };
-
-        # Disable the unused bind mount that nixpkgs creates
-        systemd.mounts = lib.mkIf (cfg'.dataDir != "/var/lib/prowlarr") {
-          "/var/lib/private/prowlarr".enable = false;
         };
 
         systemd.services.prowlarr.preStart = shb.replaceSecrets {
