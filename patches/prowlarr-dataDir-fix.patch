@@ -1,0 +1,36 @@
+From: SelfHostBlocks Contributor <contributor@selfhostblocks.org>
+Date: Sat, 23 Feb 2026 09:00:00 +0000
+Subject: [PATCH] nixos/prowlarr: Fix dataDir support and bind mount timing
+
+- Fix ExecStart to use configurable dataDir instead of hardcoded path
+- Add before dependency to ensure mount is ready before service starts
+- This allows Prowlarr to work with custom data directories like other *arr services
+
+---
+ nixos/modules/services/misc/servarr/prowlarr.nix | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/nixos/modules/services/misc/servarr/prowlarr.nix b/nixos/modules/services/misc/servarr/prowlarr.nix
+index 1234567..89abcdef 100644
+--- a/nixos/modules/services/misc/servarr/prowlarr.nix
++++ b/nixos/modules/services/misc/servarr/prowlarr.nix
+@@ -44,7 +44,7 @@ in
+           Type = "simple";
+           DynamicUser = true;
+           StateDirectory = "prowlarr";
+           EnvironmentFile = cfg.environmentFiles;
+-          ExecStart = "${lib.getExe cfg.package} -nobrowser -data=/var/lib/prowlarr";
++          ExecStart = "${lib.getExe cfg.package} -nobrowser -data=${cfg.dataDir}";
+           Restart = "on-failure";
+         };
+       };
+@@ -61,6 +61,6 @@ in
+       where = "/var/lib/private/prowlarr";
+       options = "bind";
+       wantedBy = [ "local-fs.target" ];
++      before = [ "prowlarr.service" ];
+     };
+   };
+ 
+-- 
+2.45.2
