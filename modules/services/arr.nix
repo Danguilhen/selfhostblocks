@@ -626,20 +626,20 @@ in
           dataDir = cfg'.dataDir;
         };
 
-        systemd.services.prowlarr = {
-          after = [ "var-lib-private-prowlarr.mount" ];
-          requires = [ "var-lib-private-prowlarr.mount" ];
-          
-          preStart = shb.replaceSecrets {
-            userConfig =
-              cfg'.settings
-              // (lib.optionalAttrs isSSOEnabled {
-                AuthenticationRequired = "DisabledForLocalAddresses";
-                AuthenticationMethod = "External";
-              });
-            resultPath = "${cfg'.dataDir}/config.xml";
-            generator = apps.prowlarr.settingsFormat.generate;
-          };
+        systemd.services.prowlarr.serviceConfig = {
+          # Allow preStart script to write to data directory
+          ReadWritePaths = [ cfg'.dataDir ];
+        };
+
+        systemd.services.prowlarr.preStart = shb.replaceSecrets {
+          userConfig =
+            cfg'.settings
+            // (lib.optionalAttrs isSSOEnabled {
+              AuthenticationRequired = "DisabledForLocalAddresses";
+              AuthenticationMethod = "External";
+            });
+          resultPath = "${cfg'.dataDir}/config.xml";
+          generator = apps.prowlarr.settingsFormat.generate;
         };
 
         shb.nginx.vhosts = [ (vhosts { } cfg') ];

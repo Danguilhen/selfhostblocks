@@ -1,34 +1,44 @@
 From: SelfHostBlocks Contributor <contributor@selfhostblocks.org>
 Date: Sat, 23 Feb 2026 09:00:00 +0000
-Subject: [PATCH] nixos/prowlarr: Fix dataDir support and bind mount timing
+Subject: [PATCH] nixos/prowlarr: Fix dataDir support
 
 - Fix ExecStart to use configurable dataDir instead of hardcoded path
-- Add before dependency to ensure mount is ready before service starts
+- Remove StateDirectory when using custom dataDir to avoid conflicts
+- Remove unused bind mount (not needed when ExecStart uses dataDir directly)
 - This allows Prowlarr to work with custom data directories like other *arr services
 
 ---
- nixos/modules/services/misc/servarr/prowlarr.nix | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ nixos/modules/services/misc/servarr/prowlarr.nix | 15 +++++++--------
+ 1 file changed, 7 insertions(+), 8 deletions(-)
 
 diff --git a/nixos/modules/services/misc/servarr/prowlarr.nix b/nixos/modules/services/misc/servarr/prowlarr.nix
 index 1234567..89abcdef 100644
 --- a/nixos/modules/services/misc/servarr/prowlarr.nix
 +++ b/nixos/modules/services/misc/servarr/prowlarr.nix
-@@ -44,7 +44,7 @@ in
+@@ -43,7 +43,7 @@ in
+         serviceConfig = {
            Type = "simple";
            DynamicUser = true;
-           StateDirectory = "prowlarr";
+-          StateDirectory = "prowlarr";
++          StateDirectory = if isCustomDataDir then null else "prowlarr";
            EnvironmentFile = cfg.environmentFiles;
--          ExecStart = "${lib.getExe cfg.package} -nobrowser -data=/var/lib/prowlarr";
-+          ExecStart = "${lib.getExe cfg.package} -nobrowser -data=${cfg.dataDir}";
+           ExecStart = "${lib.getExe cfg.package} -nobrowser -data=${cfg.dataDir}";
            Restart = "on-failure";
-         };
+@@ -56,13 +56,12 @@ in
+         mode = "0700";
        };
-@@ -61,6 +61,6 @@ in
-       where = "/var/lib/private/prowlarr";
-       options = "bind";
-       wantedBy = [ "local-fs.target" ];
-+      before = [ "prowlarr.service" ];
+ 
+-      mounts = lib.optional isCustomDataDir {
+-        what = cfg.dataDir;
+-        where = "/var/lib/private/prowlarr";
+-        options = "bind";
+-        wantedBy = [ "local-fs.target" ];
+-        before = [ "prowlarr.service" ];
+-      };
++      # When using custom dataDir, we don't need a bind mount since
++      # ExecStart uses dataDir directly. The bind mount was only needed
++      # when ExecStart was hardcoded to /var/lib/prowlarr.
++      mounts = lib.mkIf isCustomDataDir [ ];
      };
    };
  
