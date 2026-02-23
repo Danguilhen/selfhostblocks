@@ -28,7 +28,6 @@
           # Get rid of lldap patches when https://github.com/NixOS/nixpkgs/pull/425923 is merged.
           ./patches/lldap.patch
           ./patches/0001-nixos-borgbackup-add-option-to-override-state-direct.patch
-          ./patches/prowlarr-dataDir-fix.patch
 
           # Leaving commented out as an example.
           # (originPkgs.fetchpatch {
