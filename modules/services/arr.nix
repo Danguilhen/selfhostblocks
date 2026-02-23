@@ -641,6 +641,7 @@ in
             });
           resultPath = "${cfg'.dataDir}/config.xml";
           generator = apps.prowlarr.settingsFormat.generate;
+          user = "prowlarr";
         };
 
         shb.nginx.vhosts = [ (vhosts { } cfg') ];
